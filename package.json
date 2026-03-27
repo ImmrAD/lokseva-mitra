@@ -1,0 +1,40 @@
+{
+  "name": "lokseva-mitra",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@langchain/community": "^1.1.24",
+    "@langchain/core": "^1.1.36",
+    "@langchain/google-genai": "^2.1.26",
+    "@langchain/google-vertexai": "^2.1.26",
+    "@langchain/langgraph": "^1.2.6",
+    "@supabase/supabase-js": "^2.100.0",
+    "cheerio": "^1.2.0",
+    "framer-motion": "^12.38.0",
+    "jspdf": "^4.2.1",
+    "next": "16.2.1",
+    "puppeteer": "^24.40.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
+    "eslint": "^10.1.0",
+    "eslint-config-next": "^0.2.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}
