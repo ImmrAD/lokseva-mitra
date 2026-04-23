@@ -2,25 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function VerifyPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const emailFromQuery = searchParams?.get('email') || '';
-  const tokenFromQuery = searchParams?.get('token') || '';
-
-  const [email, setEmail] = useState(emailFromQuery);
-  const [token, setToken] = useState(tokenFromQuery);
+  const [email, setEmail] = useState('');
+  const [token, setToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const params = new URLSearchParams(window.location.search);
+    const emailFromQuery = params.get('email') || '';
+    const tokenFromQuery = params.get('token') || '';
+
+    setEmail(emailFromQuery);
+    setToken(tokenFromQuery);
+
     if (emailFromQuery && tokenFromQuery) {
       handleVerify(emailFromQuery, tokenFromQuery);
     }
-  }, [emailFromQuery, tokenFromQuery]);
+  }, []);
 
   async function handleVerify(currentEmail: string, currentToken: string) {
     setStatus('verifying');
