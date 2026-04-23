@@ -7,6 +7,8 @@ export interface User {
   isVerified: boolean;
   verificationToken?: string;
   verificationTokenExpiry?: Date;
+  otpCode?: string | null;
+  otpExpiry?: Date | null;
   createdAt: Date;
   updatedAt: Date;
   role: 'user' | 'admin';

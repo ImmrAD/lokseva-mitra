@@ -17,6 +17,10 @@ export function generateVerificationToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+export function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export async function createUser(
   name: string,
   email: string,
@@ -26,7 +30,7 @@ export async function createUser(
   role: 'user' | 'admin' = 'user'
 ): Promise<User> {
   const db = await getDatabase();
-  
+
   const user = {
     name,
     email: email.toLowerCase(),
@@ -34,6 +38,8 @@ export async function createUser(
     isVerified: false,
     verificationToken,
     verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    otpCode: null,
+    otpExpiry: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     role,
@@ -78,6 +84,52 @@ export async function verifyUserEmail(email: string, token: string): Promise<boo
         isVerified: true,
         verificationToken: null,
         verificationTokenExpiry: null,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return true;
+}
+
+export async function generateAndStoreOTP(email: string): Promise<string> {
+  const db = await getDatabase();
+  const otp = generateOTP();
+  const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  await db.collection('users').updateOne(
+    { email: email.toLowerCase() },
+    {
+      $set: {
+        otpCode: otp,
+        otpExpiry,
+        updatedAt: new Date(),
+      },
+    }
+  );
+
+  return otp;
+}
+
+export async function verifyOTP(email: string, otp: string): Promise<boolean> {
+  const db = await getDatabase();
+  const user = await getUserByEmail(email);
+
+  if (!user || user.otpCode !== otp) {
+    return false;
+  }
+
+  if (user.otpExpiry && user.otpExpiry < new Date()) {
+    return false;
+  }
+
+  await db.collection('users').updateOne(
+    { email: email.toLowerCase() },
+    {
+      $set: {
+        isVerified: true,
+        otpCode: null,
+        otpExpiry: null,
         updatedAt: new Date(),
       },
     }

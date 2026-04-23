@@ -9,6 +9,8 @@ export default function VerifyPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
+  const [otp, setOtp] = useState('');
+  const [verificationMethod, setVerificationMethod] = useState<'token' | 'otp'>('token');
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
@@ -23,11 +25,11 @@ export default function VerifyPage() {
     setToken(tokenFromQuery);
 
     if (emailFromQuery && tokenFromQuery) {
-      handleVerify(emailFromQuery, tokenFromQuery);
+      handleTokenVerify(emailFromQuery, tokenFromQuery);
     }
   }, []);
 
-  async function handleVerify(currentEmail: string, currentToken: string) {
+  async function handleTokenVerify(currentEmail: string, currentToken: string) {
     setStatus('verifying');
     setMessage('Verifying your email...');
 
@@ -58,14 +60,90 @@ export default function VerifyPage() {
     }
   }
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!email || !token) {
+  async function handleOTPVerify(currentEmail: string, currentOtp: string) {
+    setStatus('verifying');
+    setMessage('Verifying OTP...');
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentEmail, otp: currentOtp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus('error');
+        setMessage(data.message || 'OTP verification failed. Please try again.');
+        return;
+      }
+
+      setStatus('success');
+      setMessage(data.message || 'Email verified successfully. You can now log in.');
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 1800);
+    } catch (error) {
+      console.error('OTP verification error:', error);
       setStatus('error');
-      setMessage('Both email and verification token are required.');
+      setMessage('Unable to verify right now. Please try again later.');
+    }
+  }
+
+  const handleSendOTP = async () => {
+    if (!email) {
+      setStatus('error');
+      setMessage('Please enter your email address first.');
       return;
     }
-    await handleVerify(email, token);
+
+    setStatus('verifying');
+    setMessage('Sending OTP...');
+
+    try {
+      const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus('error');
+        setMessage(data.message || 'Failed to send OTP.');
+        return;
+      }
+
+      setStatus('idle');
+      setMessage('OTP sent! Please check your email and enter the code below.');
+      setVerificationMethod('otp');
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      setStatus('error');
+      setMessage('Failed to send OTP. Please try again.');
+    }
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (verificationMethod === 'token') {
+      if (!email || !token) {
+        setStatus('error');
+        setMessage('Both email and verification token are required.');
+        return;
+      }
+      await handleTokenVerify(email, token);
+    } else {
+      if (!email || !otp) {
+        setStatus('error');
+        setMessage('Both email and OTP are required.');
+        return;
+      }
+      await handleOTPVerify(email, otp);
+    }
   };
 
   return (
@@ -107,10 +185,35 @@ export default function VerifyPage() {
         )}
 
         <div className="mb-6 text-sm text-zinc-700 leading-relaxed">
-          <p>If the automatic verification link did not work, paste your email and the verification token from your email below.</p>
-          <p className="mt-3 text-xs text-zinc-500">
-            You can also use the same link that was sent to your inbox to complete verification automatically.
-          </p>
+          <p>If the automatic verification link did not work, choose your preferred verification method below.</p>
+        </div>
+
+        {/* Verification Method Toggle */}
+        <div className="mb-6">
+          <div className="flex gap-4 mb-4">
+            <button
+              type="button"
+              onClick={() => setVerificationMethod('token')}
+              className={`px-4 py-2 text-sm font-mono font-black uppercase tracking-wide border-2 transition-all ${
+                verificationMethod === 'token'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-900 border-zinc-900 hover:bg-zinc-50'
+              }`}
+            >
+              Use Token
+            </button>
+            <button
+              type="button"
+              onClick={() => setVerificationMethod('otp')}
+              className={`px-4 py-2 text-sm font-mono font-black uppercase tracking-wide border-2 transition-all ${
+                verificationMethod === 'otp'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-900 border-zinc-900 hover:bg-zinc-50'
+              }`}
+            >
+              Use OTP
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
@@ -128,26 +231,55 @@ export default function VerifyPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-mono font-black uppercase tracking-wide text-zinc-900 mb-2">
-              VERIFICATION TOKEN
-            </label>
-            <input
-              type="text"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
-              placeholder="Paste the code from your email"
-              required
-            />
-          </div>
+          {verificationMethod === 'token' ? (
+            <div>
+              <label className="block text-xs font-mono font-black uppercase tracking-wide text-zinc-900 mb-2">
+                VERIFICATION TOKEN
+              </label>
+              <input
+                type="text"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
+                placeholder="Paste the code from your email"
+                required
+              />
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-mono font-black uppercase tracking-wide text-zinc-900 mb-2">
+                OTP CODE
+              </label>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
+                placeholder="Enter 6-digit OTP"
+                maxLength={6}
+                required
+              />
+            </div>
+          )}
 
-          <button
-            type="submit"
-            className="w-full bg-zinc-900 hover:bg-zinc-700 text-white py-3 font-black uppercase text-sm tracking-widest transition-all active:scale-95"
-          >
-            VERIFY EMAIL
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              className="flex-1 bg-zinc-900 hover:bg-zinc-700 text-white py-3 font-black uppercase text-sm tracking-widest transition-all active:scale-95"
+            >
+              VERIFY EMAIL
+            </button>
+
+            {verificationMethod === 'otp' && (
+              <button
+                type="button"
+                onClick={handleSendOTP}
+                className="px-6 bg-rose-950 hover:bg-rose-900 text-white py-3 font-black uppercase text-sm tracking-widest transition-all active:scale-95"
+              >
+                SEND OTP
+              </button>
+            )}
+          </div>
         </form>
 
         <div className="text-center pt-6 border-t-2 border-zinc-900">

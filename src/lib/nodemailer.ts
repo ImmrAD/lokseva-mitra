@@ -100,3 +100,50 @@ export async function sendWelcomeEmail(email: string, userName: string) {
 
   return transporter.sendMail(mailOptions);
 }
+
+export async function sendOTPEmail(email: string, otp: string, userName: string) {
+  const mailOptions = {
+    from: process.env.NODEMAILER_USER,
+    to: email,
+    subject: 'लोकसेवा मित्र - Email Verification OTP | ईमेल सत्यापन OTP',
+    html: `
+      <div style="font-family: Arial, sans-serif; background-color: #faf8f5; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: white; border: 2px solid #2c1810; padding: 30px;">
+          <h1 style="font-size: 28px; font-weight: bold; color: #9f1239; text-align: center; margin: 0 0 10px 0; font-family: Georgia, serif;">
+            लोकसेवा मित्र
+          </h1>
+          <div style="text-align: center; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #9f1239; margin-bottom: 30px; border-bottom: 1px solid #ccc; padding-bottom: 15px;">
+            Voice of The Citizen Portal
+          </div>
+
+          <h2 style="font-size: 18px; color: #171717; margin-bottom: 15px;">Verify Your Email</h2>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+            Hello <strong>${userName}</strong>,
+          </p>
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+            Please use the following OTP to verify your email address and activate your account.
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background-color: #f5f5f5; border: 2px solid #2c1810; padding: 20px; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #2c1810;">
+              ${otp}
+            </div>
+          </div>
+
+          <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+            Enter this code on the verification page to complete your registration.
+          </p>
+
+          <p style="color: #999; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
+            This OTP expires in 10 minutes.
+          </p>
+          <p style="color: #999; font-size: 12px;">
+            EDITORIAL DEPARTMENT | CITIZEN RELATIONS | LOKSEVA MITRA ©
+          </p>
+        </div>
+      </div>
+    `,
+  };
+
+  return transporter.sendMail(mailOptions);
+}
