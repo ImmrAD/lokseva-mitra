@@ -225,7 +225,7 @@ export default function VerifyPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
+              className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all text-zinc-900 font-sans"
               placeholder="your@email.com"
               required
             />
@@ -240,7 +240,7 @@ export default function VerifyPage() {
                 type="text"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
+                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all text-zinc-900 font-sans"
                 placeholder="Paste the code from your email"
                 required
               />
@@ -254,7 +254,7 @@ export default function VerifyPage() {
                 type="text"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all font-serif italic"
+                className="w-full bg-white border-2 border-zinc-900 px-4 py-3 focus:outline-none focus:border-rose-950 transition-all text-zinc-900 font-sans"
                 placeholder="Enter 6-digit OTP"
                 maxLength={6}
                 required
