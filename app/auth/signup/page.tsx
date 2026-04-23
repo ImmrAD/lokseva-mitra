@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
 
 export default function SignUpPage() {
@@ -66,8 +67,18 @@ export default function SignUpPage() {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    alert('Google signup coming soon');
+  const handleGoogleSignUp = async () => {
+    try {
+      const result = await signIn('google', { redirect: false });
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.ok) {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setError('Google sign-up failed. Please try again.');
+      console.error(err);
+    }
   };
 
   return (

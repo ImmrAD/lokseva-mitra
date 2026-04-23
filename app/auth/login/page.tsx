@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
@@ -50,9 +51,18 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // TODO: Implement Google OAuth flow
-    alert('Google login coming soon');
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signIn('google', { redirect: false });
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.ok) {
+        router.push('/dashboard');
+      }
+    } catch (err) {
+      setError('Google sign-in failed. Please try again.');
+      console.error(err);
+    }
   };
 
   return (
