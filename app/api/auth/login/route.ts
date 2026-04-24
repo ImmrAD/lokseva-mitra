@@ -20,13 +20,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.isVerified) {
-      return NextResponse.json(
-        { success: false, message: 'Please verify your email before logging in' },
-        { status: 401 }
-      );
-    }
-
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       return NextResponse.json(

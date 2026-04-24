@@ -25,7 +25,7 @@ export async function createUser(
   name: string,
   email: string,
   passwordHash: string,
-  verificationToken: string,
+  verificationToken: string | null = null,
   age?: number,
   role: 'user' | 'admin' = 'user'
 ): Promise<User> {
@@ -35,9 +35,9 @@ export async function createUser(
     name,
     email: email.toLowerCase(),
     passwordHash,
-    isVerified: false,
-    verificationToken,
-    verificationTokenExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    isVerified: true, // Users are verified by default now
+    verificationToken: undefined, // No verification token needed
+    verificationTokenExpiry: undefined, // No expiry needed
     otpCode: null,
     otpExpiry: null,
     createdAt: new Date(),

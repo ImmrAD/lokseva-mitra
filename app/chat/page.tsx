@@ -1,10 +1,42 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+
+// Web Speech API types
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+declare var SpeechRecognition: {
+  prototype: SpeechRecognition;
+  new (): SpeechRecognition;
+};
 
 interface Message {
   role: 'user' | 'ai';
@@ -74,6 +106,14 @@ export default function ChatPage() {
   const [lang, setLang] = useState<Language>('en');
   const [formattedDate, setFormattedDate] = useState('');
 
+  // Voice assistance state
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speechRecognition, setSpeechRecognition] = useState<SpeechRecognition | null>(null);
+  const [speechSynthesis, setSpeechSynthesis] = useState<SpeechSynthesis | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const synthesisRef = useRef<SpeechSynthesis | null>(null);
+
   useEffect(() => {
     setFormattedDate(
       new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'hi' ? 'hi-IN' : 'mr-IN', {
@@ -129,6 +169,147 @@ export default function ChatPage() {
     fetchNews();
   }, []);
 
+  // Voice assistance initialization
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Initialize speech recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = getLanguageCode(lang);
+        recognitionRef.current = recognition;
+        setSpeechRecognition(recognition);
+      }
+
+      // Initialize speech synthesis
+      if ('speechSynthesis' in window) {
+        synthesisRef.current = window.speechSynthesis;
+        setSpeechSynthesis(window.speechSynthesis);
+      }
+    }
+  }, [lang]);
+
+  // Language code mapping for speech recognition
+  const getLanguageCode = (lang: Language): string => {
+    switch (lang) {
+      case 'hi': return 'hi-IN';
+      case 'mr': return 'mr-IN';
+      case 'en': return 'en-IN';
+      default: return 'en-IN';
+    }
+  };
+
+  // Voice input functions
+  const startListening = () => {
+    if (!speechRecognition) {
+      alert('Speech recognition is not supported in your browser.');
+      return;
+    }
+
+    setIsListening(true);
+    speechRecognition.lang = getLanguageCode(lang);
+
+    speechRecognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+    };
+
+    speechRecognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+    };
+
+    speechRecognition.onend = () => {
+      setIsListening(false);
+    };
+
+    speechRecognition.start();
+  };
+
+  const stopListening = () => {
+    if (speechRecognition) {
+      speechRecognition.stop();
+    }
+    setIsListening(false);
+  };
+
+  // Voice output functions
+  const cleanMarkdownForSpeech = (text: string): string => {
+    return text
+      // Remove bold/italic markdown
+      .replace(/\*\*(.*?)\*\*/g, '$1')  // **bold**
+      .replace(/\*(.*?)\*/g, '$1')      // *italic*
+      .replace(/_(.*?)_/g, '$1')        // _italic_
+      .replace(/__(.*?)__/g, '$1')      // __bold__
+
+      // Remove inline code
+      .replace(/`(.*?)`/g, '$1')        // `code`
+
+      // Remove code blocks
+      .replace(/```[\s\S]*?```/g, '')   // ```code blocks```
+      .replace(/~~~[\s\S]*?~~~/g, '')   // ~~~code blocks~~~
+
+      // Remove headers
+      .replace(/^#{1,6}\s+/gm, '')      // # ## ### headers
+
+      // Remove links but keep text
+      .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')  // [text](url)
+
+      // Remove images
+      .replace(/!\[([^\]]*)\]\([^\)]+\)/g, '')  // ![alt](url)
+
+      // Remove list markers
+      .replace(/^[\s]*[-\*\+]\s+/gm, '')  // - * + list items
+      .replace(/^[\s]*\d+\.\s+/gm, '')   // 1. 2. numbered lists
+
+      // Remove blockquotes
+      .replace(/^[\s]*>\s+/gm, '')       // > blockquotes
+
+      // Remove horizontal rules
+      .replace(/^[\s]*[-*_]{3,}[\s]*$/gm, '')  // --- *** ___
+
+      // Clean up extra whitespace
+      .replace(/\n{3,}/g, '\n\n')        // Multiple newlines
+      .replace(/^\s+|\s+$/g, '')         // Leading/trailing whitespace
+
+      // Remove HTML tags (in case any slip through)
+      .replace(/<[^>]*>/g, '');
+  };
+
+  const speakText = (text: string) => {
+    if (!speechSynthesis) {
+      alert('Speech synthesis is not supported in your browser.');
+      return;
+    }
+
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
+
+    // Clean the text for better speech synthesis
+    const cleanText = cleanMarkdownForSpeech(text);
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = getLanguageCode(lang);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    speechSynthesis.speak(utterance);
+  };
+
+  const stopSpeaking = () => {
+    if (speechSynthesis) {
+      speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+  };
+
   const activeSession = sessions.find((s) => s.id === activeId) || null;
 
   const handleSend = async (e: React.FormEvent) => {
@@ -176,6 +357,9 @@ export default function ChatPage() {
             : s
         )
       );
+
+      // Speak the AI response
+      speakText(data.reply);
     } catch (error) {
       console.error('Failed to fetch advisory');
     } finally {
@@ -363,27 +547,40 @@ export default function ChatPage() {
                     </div>
 
                     {msg.role === 'ai' ? (
-                      <div className="prose prose-sm max-w-none text-inherit leading-relaxed font-serif text-[15px]">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            a: ({ ...props }: any) => (
-                              <a {...props} target="_blank" className="text-blue-900 underline font-black" />
-                            ),
-                            strong: ({ ...props }: any) => (
-                              <strong {...props} className="font-black text-rose-950" />
-                            ),
-                            h1: ({ ...props }: any) => (
-                              <h1
-                                {...props}
-                                className="text-lg font-serif font-bold mt-4 mb-2 text-zinc-900 border-double border-b-2 border-zinc-800 pb-1"
-                              />
-                            ),
-                            ul: ({ ...props }: any) => <ul {...props} className="list-disc ml-5 space-y-2 mt-3" />,
-                          }}
+                      <div className="relative">
+                        <div className="prose prose-sm max-w-none text-inherit leading-relaxed font-serif text-[15px]">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              a: ({ ...props }: any) => (
+                                <a {...props} target="_blank" className="text-blue-900 underline font-black" />
+                              ),
+                              strong: ({ ...props }: any) => (
+                                <strong {...props} className="font-black text-rose-950" />
+                              ),
+                              h1: ({ ...props }: any) => (
+                                <h1
+                                  {...props}
+                                  className="text-lg font-serif font-bold mt-4 mb-2 text-zinc-900 border-double border-b-2 border-zinc-800 pb-1"
+                                />
+                              ),
+                              ul: ({ ...props }: any) => <ul {...props} className="list-disc ml-5 space-y-2 mt-3" />,
+                            }}
+                          >
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                        {/* Voice playback button for AI messages */}
+                        <button
+                          onClick={() => speakText(msg.content)}
+                          disabled={isSpeaking}
+                          className="absolute top-2 right-2 p-2 bg-rose-950 hover:bg-rose-900 disabled:bg-rose-700 text-white rounded-full transition-all shadow-lg"
+                          title="Listen to this response"
                         >
-                          {msg.content}
-                        </ReactMarkdown>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M13.5 4.5L9 9H4.5A1.5 1.5 0 003 10.5v3A1.5 1.5 0 004.5 15H9l4.5 4.5A1.5 1.5 0 0015 18V6a1.5 1.5 0 00-1.5-1.5z" />
+                          </svg>
+                        </button>
                       </div>
                     ) : (
                       <p className="whitespace-pre-wrap font-sans font-medium text-base text-rose-950">{msg.content}</p>
@@ -404,14 +601,46 @@ export default function ChatPage() {
         {/* INPUT AREA */}
         <div className="bg-white border-t-2 border-zinc-900 p-6 shadow-none">
           <form onSubmit={handleSend} className="max-w-4xl mx-auto flex gap-4">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={UI_TEXT[lang].placeholder}
-              className="flex-1 bg-white border-2 border-zinc-900 px-6 py-4 focus:outline-none focus:border-rose-950 transition-all font-serif italic shadow-inner"
-              disabled={isLoading}
-            />
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={UI_TEXT[lang].placeholder}
+                className="w-full bg-white border-2 border-zinc-900 px-6 py-4 pr-16 focus:outline-none focus:border-rose-950 transition-all font-serif italic shadow-inner"
+                disabled={isLoading}
+              />
+              {/* Voice Input Button */}
+              <button
+                type="button"
+                onClick={isListening ? stopListening : startListening}
+                className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-2 rounded-full transition-all ${
+                  isListening
+                    ? 'bg-red-500 text-white animate-pulse'
+                    : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-600 hover:text-zinc-800'
+                }`}
+                title={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </button>
+            </div>
+            {/* Voice Output Toggle */}
+            <button
+              type="button"
+              onClick={isSpeaking ? stopSpeaking : () => {}}
+              className={`px-4 py-4 border-2 transition-all ${
+                isSpeaking
+                  ? 'bg-red-500 border-red-500 text-white'
+                  : 'bg-white border-zinc-900 text-zinc-900 hover:bg-zinc-50'
+              }`}
+              title={isSpeaking ? 'Stop speaking' : 'Voice output enabled'}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M13.5 4.5L9 9H4.5A1.5 1.5 0 003 10.5v3A1.5 1.5 0 004.5 15H9l4.5 4.5A1.5 1.5 0 0015 18V6a1.5 1.5 0 00-1.5-1.5z" />
+              </svg>
+            </button>
             <button
               type="submit"
               disabled={isLoading || !input.trim()}

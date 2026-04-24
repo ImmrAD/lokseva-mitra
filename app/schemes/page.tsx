@@ -1,49 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-const SAMPLE_SCHEMES = [
-  {
-    id: 1,
-    name: 'PM Kisan Samman Nidhi',
-    nameHi: 'प्रधानमंत्री किसान सम्मान निधि',
-    category: 'Agriculture',
-    amount: '₹6000/year',
-    description: 'Direct income support for farmers',
-    eligibility: ['Farmers with land', 'Age 18+'],
-  },
-  {
-    id: 2,
-    name: 'Pradhan Mantri Ujjwala Yojana',
-    nameHi: 'प्रधानमंत्री उज्ज्वला योजना',
-    category: 'Energy',
-    amount: 'Free LPG Connection',
-    description: 'Provides free LPG connections to poor households',
-    eligibility: ['BPL families', 'No existing LPG'],
-  },
-  {
-    id: 3,
-    name: 'PMAY - Housing Scheme',
-    nameHi: 'प्रधानमंत्री आवास योजना',
-    category: 'Housing',
-    amount: '₹2-3 Lakhs',
-    description: 'Affordable housing for economically weaker sections',
-    eligibility: ['Income below ₹6 Lakhs', 'No existing housing'],
-  },
-];
+interface Scheme {
+  id: string;
+  name: string;
+  description: string;
+  sector: string;
+  organization: string;
+  link: string;
+  tags: string[];
+  updated: string | null;
+}
 
 export default function SchemesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [sectors, setSectors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isFallback, setIsFallback] = useState(false);
 
-  const categories = ['All', 'Agriculture', 'Energy', 'Housing', 'Education', 'Healthcare'];
+  useEffect(() => {
+    const fetchSchemes = async () => {
+      setIsLoading(true);
+      setError('');
+      setIsFallback(false);
 
-  const filtered = SAMPLE_SCHEMES.filter((scheme) => {
+      try {
+        const response = await fetch('/api/schemes');
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Could not load scheme data');
+        }
+
+        setSchemes(data.schemes || []);
+        setSectors(['All', ...(data.sectors || [])]);
+        setIsFallback(Boolean(data.fallback));
+      } catch (err) {
+        console.error(err);
+        setError('Unable to fetch latest schemes from data.gov.in. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchemes();
+  }, []);
+
+  const categories = sectors.length > 0 ? sectors : ['All'];
+
+  const filtered = schemes.filter((scheme) => {
     const matchesSearch = scheme.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || scheme.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || scheme.sector === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -61,6 +75,11 @@ export default function SchemesPage() {
       </header>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
+        {isFallback && (
+          <div className="mb-6 rounded-lg border-2 border-amber-500 bg-amber-50 p-4 text-amber-900 font-black text-sm uppercase tracking-widest">
+            Latest schemes are currently unavailable from data.gov.in. Showing fallback official schemes for discovery.
+          </div>
+        )}
         {/* Search & Filter */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-12">
           <div className="bg-white border-2 border-zinc-900 p-8">
@@ -102,7 +121,15 @@ export default function SchemesPage() {
 
         {/* Results */}
         <div className="space-y-6">
-          {filtered.length > 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12 text-zinc-700 font-mono uppercase tracking-widest">
+              Loading latest schemes from Data.gov.in...
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-red-700 font-mono uppercase tracking-widest">
+              {error}
+            </div>
+          ) : filtered.length > 0 ? (
             filtered.map((scheme) => (
               <motion.div
                 key={scheme.id}
@@ -115,14 +142,14 @@ export default function SchemesPage() {
                   className="w-full p-6 text-left flex justify-between items-start hover:bg-zinc-50 transition-colors"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <span className="text-xs font-mono font-black uppercase tracking-widest text-rose-950 bg-rose-50 px-3 py-1">
-                        {scheme.category}
+                        {scheme.sector}
                       </span>
-                      <span className="text-xs font-mono font-black text-zinc-600">{scheme.amount}</span>
+                      <span className="text-xs font-mono font-black text-zinc-600">{scheme.organization}</span>
                     </div>
                     <h3 className="text-xl font-black text-zinc-900 mb-1">{scheme.name}</h3>
-                    <p className="text-sm text-zinc-600">{scheme.nameHi}</p>
+                    <p className="text-sm text-zinc-600 line-clamp-2">{scheme.description}</p>
                   </div>
                   <span className="text-2xl text-zinc-600">{expandedId === scheme.id ? '×' : '+'}</span>
                 </button>
@@ -130,28 +157,38 @@ export default function SchemesPage() {
                 {expandedId === scheme.id && (
                   <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="border-t-2 border-zinc-900 p-6 bg-zinc-50">
                     <p className="text-zinc-700 font-serif mb-4">{scheme.description}</p>
-                    <div className="mb-6">
-                      <h4 className="text-sm font-mono font-black uppercase tracking-widest text-zinc-900 mb-3">
-                        Eligibility Criteria
-                      </h4>
-                      <ul className="space-y-2">
-                        {scheme.eligibility.map((item, idx) => (
-                          <li key={idx} className="flex gap-2 items-start">
-                            <span className="text-rose-950 font-black mt-1">✓</span>
-                            <span className="text-zinc-700">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="grid gap-4 sm:grid-cols-2 mb-6">
+                      <div>
+                        <h4 className="text-sm font-mono font-black uppercase tracking-widest text-zinc-900 mb-2">
+                          Sector
+                        </h4>
+                        <p className="text-zinc-700">{scheme.sector}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-mono font-black uppercase tracking-widest text-zinc-900 mb-2">
+                          Authority
+                        </h4>
+                        <p className="text-zinc-700">{scheme.organization}</p>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <h4 className="text-sm font-mono font-black uppercase tracking-widest text-zinc-900 mb-2">
+                          Official dataset link
+                        </h4>
+                        <a href={scheme.link} target="_blank" rel="noreferrer" className="text-blue-900 underline font-black">
+                          View on data.gov.in
+                        </a>
+                      </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
                       <Link
-                        href={`/eligibility?scheme=${scheme.id}`}
-                        className="flex-1 bg-zinc-900 hover:bg-zinc-700 text-white px-4 py-3 font-black text-xs uppercase tracking-widest transition-all active:scale-95"
+                        href={scheme.link}
+                        target="_blank"
+                        className="flex-1 bg-zinc-900 hover:bg-zinc-700 text-white px-4 py-3 font-black text-xs uppercase tracking-widest transition-all active:scale-95 text-center"
                       >
-                        CHECK ELIGIBILITY
+                        OPEN DATASET
                       </Link>
                       <button className="px-4 py-3 bg-white border-2 border-zinc-900 hover:bg-zinc-50 text-zinc-900 font-black text-xs uppercase tracking-widest transition-all">
-                        LEARN MORE
+                        BROADCAST TO CHAT
                       </button>
                     </div>
                   </motion.div>

@@ -13,13 +13,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
-  const [isVerified, setIsVerified] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setIsVerified(params.get('verified') === 'true');
-  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,17 +79,6 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-rose-950/20"></div>
           </div>
         </div>
-
-        {/* Success Message */}
-        {isVerified && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-green-50 border-2 border-green-700 text-green-900 text-sm font-mono"
-          >
-            ✓ Email verified successfully! You can now login.
-          </motion.div>
-        )}
 
         {/* Error Message */}
         {error && (

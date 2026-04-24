@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  hashPassword,
-  generateVerificationToken,
-  createUser,
-  getUserByEmail,
-} from '@/lib/auth';
-import { sendVerificationEmail } from '@/lib/nodemailer';
+import { hashPassword, createUser, getUserByEmail } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,29 +30,20 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await hashPassword(password);
-    const verificationToken = generateVerificationToken();
 
     const user = await createUser(
       name,
       email,
       passwordHash,
-      verificationToken,
+      null, // No verification token needed
       parsedAge,
       normalizedRole
     );
 
-    // Send verification email
-    try {
-      await sendVerificationEmail(email, verificationToken, name);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Still return success, user can request resend
-    }
-
     return NextResponse.json(
       {
         success: true,
-        message: 'User registered successfully. Please check your email to verify your account.',
+        message: 'User registered successfully. You can now login.',
         userId: user._id,
       },
       { status: 201 }

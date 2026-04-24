@@ -55,7 +55,7 @@ export default function SignUpPage() {
         return;
       }
 
-      setSuccess('Registration successful! Please check your email to verify your account.');
+      setSuccess('Registration successful! You can now login.');
       setTimeout(() => {
         router.push('/auth/login');
       }, 2000);
