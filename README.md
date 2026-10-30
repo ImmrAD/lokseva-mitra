@@ -1,240 +1,333 @@
-# Lokseva Mitra | लोकसेवा मित्र
+<div align="center">
 
-### An AI-assisted gateway to government schemes and citizen services
+<h1>LOKSEVA MITRA</h1>
 
-**Discover relevant schemes. Understand eligibility. Prepare documents. Follow the application journey.**
+<h3>AI-Assisted Government Scheme Discovery &amp; Citizen Guidance</h3>
 
-Lokseva Mitra is a full-stack web application designed to make government welfare information easier to explore and act on. Instead of navigating disconnected sources and complex requirements, users can discover schemes, check eligibility criteria, organize required documents, and follow guided application steps in one place. An AI chat experience adds conversational assistance in English, Hindi, and Marathi.
+<p><strong>Discover schemes. Understand eligibility. Prepare documents. Navigate applications.</strong></p>
 
-> **Project stage:** Demonstration/development project. The features below are described in the supplied implementation documentation; the application source code and live deployment were not provided for independent verification. Eligibility guidance is informational and does not represent an official government determination.
+<p>
+  <a href="https://github.com/ImmrAD/lokseva-mitra"><img src="https://img.shields.io/badge/GitHub-Project_Repository-155CA6?style=for-the-badge&logo=github&logoColor=white" alt="Project repository" /></a>
+  <img src="https://img.shields.io/badge/Next.js-16.2.1-123F70?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19.2.4-1769AA?style=for-the-badge&logo=react&logoColor=white" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+</p>
 
-## The problem
+<a href="#project-overview">Overview</a> · <a href="#system-architecture">Architecture</a> · <a href="#end-to-end-user-journey">User Journey</a> · <a href="#key-features">Features</a> · <a href="#technology-stack">Tech Stack</a> · <a href="#getting-started">Setup</a> · <a href="#team-and-contact">Contact</a>
 
-Finding a suitable government scheme can involve multiple portals, unfamiliar eligibility rules, document requirements, and unclear application steps. Lokseva Mitra brings these stages into a connected, approachable experience, particularly for users who benefit from local-language support.
+</div>
 
-## Core capabilities
+---
 
-| Module | What it helps users do |
-| --- | --- |
-| **Scheme discovery** | Browse, search, and filter schemes by category and inspect scheme details. |
-| **Eligibility checker** | Enter relevant details and review a criteria-based eligibility assessment with next steps. |
-| **Document guidance** | Work through required/optional document checklists and see preparation progress. |
-| **Application guide** | Follow a step-by-step timeline with helpful tips, estimated effort, and FAQs. |
-| **AI assistant** | Ask scheme-related questions through a multilingual chat interface; the documentation also describes session history and PDF export. |
-| **Account management** | Sign up, verify an email address, sign in, and reach a personal dashboard. |
-| **Admin dashboard** | A dedicated interface for scheme, user, and application oversight as described by the implementation notes. |
-| **Responsive interface** | Use a newspaper-inspired design across desktop, tablet, and mobile layouts. |
+## Project Overview
 
-## How Lokseva Mitra works
+**Lokseva Mitra (लोकसेवा मित्र)** is a full-stack platform focused on making Indian government welfare schemes easier to discover, understand, and navigate. It connects searchable scheme information with eligibility guidance, document preparation, application instructions, and a multilingual AI chat experience.
 
-### Citizen journey
+Instead of sending users through disconnected information sources, the platform presents a **connected journey from discovery to informed next steps**.
 
-```text
-                 ┌───────────────────────┐
-                 │   Lokseva Mitra       │
-                 │   Landing Page        │
-                 └───────────┬───────────┘
-                             │
-                    Sign up / Log in
-                             │
-               Email verification (signup)
-                             │
-                 ┌───────────▼───────────┐
-                 │   User Dashboard      │
-                 └───────────┬───────────┘
-                             │
-             ┌───────────────┴────────────────┐
-             │                                │
-     ┌───────▼────────┐              ┌────────▼────────┐
-     │ Scheme Search  │              │ Multilingual AI │
-     │ & Discovery    │              │ Chat Assistant  │
-     └───────┬────────┘              └─────────────────┘
-             │
-     ┌───────▼────────┐
-     │ Eligibility    │
-     │ Assessment     │
-     └───────┬────────┘
-             │
-     ┌───────▼────────┐
-     │ Document       │
-     │ Checklist      │
-     └───────┬────────┘
-             │
-     ┌───────▼────────┐
-     │ Step-by-Step   │
-     │ Application    │
-     │ Guide          │
-     └────────────────┘
+| Real-world challenge | Lokseva Mitra's approach |
+|:--|:--|
+| Schemes are difficult to discover. | Searchable, category-based scheme explorer. |
+| Eligibility rules can be confusing. | Guided criteria-based assessment. |
+| Required documents are not always clear. | Checklist with required/optional indicators and progress. |
+| Application procedures take time to understand. | Guided steps, timeline, and frequently asked questions. |
+| Language creates barriers. | English, Hindi, and Marathi chat experience. |
+
+### The product thinking
+
+The key design decision is to combine **structured workflows** with **conversational guidance**. Users can search, compare requirements, review checklists, and follow next steps without depending entirely on chat responses.
+
+---
+
+## System Architecture
+
+### High-level application architecture
+
+```mermaid
+flowchart TB
+    U["Citizen / Administrator"] --> UI["Next.js 16 + React 19"]
+    UI --> DASH["Landing + Dashboard"]
+
+    subgraph EXPERIENCE["Citizen experience"]
+        SCHEME["Scheme Discovery"]
+        ELIG["Eligibility Checker"]
+        DOC["Document Guidance"]
+        GUIDE["Application Guide"]
+        CHAT["Multilingual AI Chat"]
+    end
+
+    DASH --> SCHEME
+    SCHEME --> ELIG
+    ELIG --> DOC
+    DOC --> GUIDE
+    DASH --> CHAT
+
+    subgraph SERVER["Application services"]
+        AUTH["Authentication APIs"]
+        CHATAPI["Chat API"]
+        INFO["Scheme / Guidance Logic"]
+    end
+
+    UI --> AUTH
+    CHAT --> CHATAPI
+    SCHEME --> INFO
+    AUTH --> DB["MongoDB"]
+    AUTH --> EMAIL["Nodemailer"]
+    CHATAPI --> AI["Configured AI Service"]
+
+    classDef dark fill:#103F79,stroke:#0B2C53,stroke-width:2px,color:#FFFFFF;
+    classDef blue fill:#1D65AD,stroke:#124B84,stroke-width:2px,color:#FFFFFF;
+    classDef light fill:#E7F2FF,stroke:#397EBE,stroke-width:2px,color:#123A63;
+    classDef external fill:#D5E9FC,stroke:#2A6AA7,stroke-width:2px,color:#123A63;
+    class U,UI,DASH dark;
+    class SCHEME,ELIG,DOC,GUIDE,CHAT blue;
+    class AUTH,CHATAPI,INFO light;
+    class DB,EMAIL,AI external;
+    style EXPERIENCE fill:#F1F7FF,stroke:#85B3E1,color:#123A63
+    style SERVER fill:#F1F7FF,stroke:#85B3E1,color:#123A63
 ```
 
-The modules form a guidance workflow; this diagram does **not** imply that Lokseva Mitra automatically submits applications to government portals.
+The architecture shows the main documented modules and integration boundaries. The actual AI provider and third-party scheme data sources depend on project configuration.
 
-### At-a-glance system flow
+### Layer-wise responsibilities
+
+| Layer | Core responsibility | Main technologies |
+|:--|:--|:--|
+| **Presentation** | Pages, forms, chat interface, responsive layouts | Next.js, React, Tailwind CSS, Framer Motion |
+| **Application** | Server APIs and module logic | Next.js App Router, TypeScript |
+| **Authentication** | Account creation, sign-in, verification | Authentication utilities, Nodemailer |
+| **Persistence** | Account data and database connectivity | MongoDB |
+| **AI and content** | Assistant interaction and supporting tools | LangChain ecosystem, Google AI packages, React Markdown, jsPDF |
+
+---
+
+## End-to-End User Journey
+
+### From first visit to application readiness
 
 ```mermaid
 flowchart TD
-    A["Citizen"] --> B["Next.js / React Interface"]
-    B --> C["Sign-up and Login"]
-    C --> D["MongoDB User Records"]
-    C --> E["Nodemailer Verification"]
-    B --> F["Scheme Discovery"]
-    F --> G["Eligibility Check"]
-    G --> H["Document Checklist"]
-    H --> I["Application Guide"]
-    B --> J["AI Chat Interface"]
-    J --> K["Chat API / AI Integrations"]
+    START["Visit Lokseva Mitra"] --> ACCOUNT["Sign Up / Log In"]
+    ACCOUNT --> VERIFY["Email Verification"]
+    VERIFY --> HOME["User Dashboard"]
+    HOME --> SEARCH["Find Relevant Schemes"]
+    SEARCH --> CHECK["Understand Eligibility"]
+    CHECK --> DOCUMENTS["Prepare Documents"]
+    DOCUMENTS --> APPLY["Follow Application Guide"]
+    HOME --> ASSIST["Ask AI Assistant"]
+    ASSIST -. "Clarify questions" .-> SEARCH
+
+    classDef strong fill:#0E4B89,stroke:#0C335F,stroke-width:2px,color:#FFFFFF;
+    classDef step fill:#DFEFFF,stroke:#3A7EBB,stroke-width:2px,color:#113B64;
+    classDef help fill:#2578BF,stroke:#124A82,stroke-width:2px,color:#FFFFFF;
+    class START,HOME strong;
+    class ACCOUNT,VERIFY,SEARCH,CHECK,DOCUMENTS,APPLY step;
+    class ASSIST help;
 ```
 
-This diagram summarizes the modules described in the project notes; individual API-to-provider calls still need source-level confirmation.
-
-## End-to-end workflow
-
-### 1. Account creation and verification
+### Workflow 01 — Registration and verification
 
 ```text
-Sign up → Validate inputs → Store user record in MongoDB
-        → Send verification email → Verify token → Login → Dashboard
+Create Account
+    |
+    v
+Validate Details and Hash Password
+    |
+    v
+Persist User in MongoDB
+    |
+    v
+Generate Verification Token
+    |
+    v
+Send Email via Nodemailer
+    |
+    v
+Verify Email -> Login -> Dashboard
 ```
 
-The implementation notes describe email/password registration, PBKDF2 password hashing, and time-limited verification tokens. Google sign-in is described as configuration-ready, rather than a verified live integration.
+The implementation notes describe PBKDF2-SHA512 password hashing and time-limited verification tokens.
 
-### 2. Finding a suitable scheme
+### Workflow 02 — Scheme discovery and application guidance
 
 ```text
-Dashboard → Browse / Search / Filter → Scheme Details
-          → Open Eligibility Checker
+Browse / Search Schemes
+        |
+        v
+Filter by Category and View Details
+        |
+        v
+Provide Eligibility Information
+        |
+        v
+Review Criteria and Next Steps
+        |
+        v
+Track Document Checklist
+        |
+        v
+Follow Application Instructions
 ```
 
-The discovery module is intended to reduce the effort of finding potentially relevant government schemes. Actual scheme-source coverage and update frequency must be confirmed from the code and data sources.
+This is an informational support workflow; official authorities make final eligibility decisions and process applications.
 
-### 3. Understanding eligibility
+### Workflow 03 — AI assistance
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant UI as Chat Interface
+    participant API as Next.js Chat API
+    participant AI as Configured AI Service
+    User->>UI: Ask in English / Hindi / Marathi
+    UI->>API: Submit message
+    API->>AI: Process question
+    AI-->>API: Return answer
+    API-->>UI: Respond to chat
+    UI-->>User: Display assistant reply
+```
+
+The documented chat module also describes conversation history and PDF export. The diagram presents the high-level interaction without assuming an undocumented retrieval technique.
+
+---
+
+## Key Features
+
+| Module | What users can do |
+|:--|:--|
+| **Multilingual AI Chat** | Ask questions in English, Hindi, or Marathi; review conversations and export as PDF. |
+| **Scheme Explorer** | Search, filter, and inspect government schemes. |
+| **Eligibility Checker** | Enter profile details and review eligibility criteria. |
+| **Document Guidance** | Identify required documents and follow a progress checklist. |
+| **Application Guide** | Navigate a step-by-step timeline and FAQs. |
+| **Account System** | Register, verify email, log in, and access a dashboard. |
+| **Admin Dashboard** | View scheme, user, and application management screens. |
+| **Responsive Design** | Use the interface across mobile, tablet, and desktop. |
+
+<details>
+<summary><strong>Explore account and authentication capabilities</strong></summary>
+
+The project documentation describes registration, credential validation, password hashing, MongoDB user records, verification emails, and dashboard access. Google OAuth is described as ready for configuration.
+
+</details>
+
+<details>
+<summary><strong>Explore scheme discovery and user guidance</strong></summary>
+
+The scheme module offers category-based browsing, filters, and details. The eligibility module evaluates provided inputs against displayed criteria, while the document and application-guide modules convert the findings into practical preparation tasks.
+
+</details>
+
+<details>
+<summary><strong>Explore AI chat and PDF capabilities</strong></summary>
+
+The chat experience is designed for English, Hindi, and Marathi interaction. The implementation notes describe conversation archives and PDF export. Installed AI-related packages include LangChain, LangGraph, Google GenAI, and Google Vertex AI libraries.
+
+</details>
+
+---
+
+## Technology Stack
+
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-16.2.1-104F8E?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19.2.4-176FB2?style=flat-square&logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-4-087EA4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/MongoDB-Database-1777A5?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/LangChain-AI_Tooling-135DAB?style=flat-square" alt="LangChain" />
+</div>
+
+| Category | Tools and libraries |
+|:--|:--|
+| Frontend | Next.js 16.2.1, React 19.2.4, TypeScript |
+| UI / Styling | Tailwind CSS 4, Framer Motion |
+| Backend | Next.js API handlers |
+| Database | MongoDB |
+| Identity / Email | Authentication utilities, Nodemailer; NextAuth dependency |
+| AI ecosystem | LangChain Core, Community, LangGraph, Google GenAI, Google Vertex AI packages |
+| Other libraries | Supabase JS, jsPDF, React Markdown, Remark GFM, Cheerio, Puppeteer |
+| Tooling | npm, ESLint, TypeScript |
+
+**Design system:** A newspaper-inspired interface with serif headlines, monospace labels, bold dividers, structured grids, high-contrast colors, and responsive layouts.
+
+---
+
+## Project Structure
+
+The implementation documents describe this module layout:
 
 ```text
-Enter age, income, state, category and other details
-        ↓
-Review criteria-based assessment
-        ↓
-See guidance on possible next steps
+lokseva-mitra/
+|
+|-- app/
+|   |-- page.tsx              Landing page
+|   |-- auth/                 Login and signup
+|   |-- dashboard/            User dashboard
+|   |-- chat/                 AI assistant
+|   |-- schemes/              Scheme discovery
+|   |-- eligibility/          Eligibility checker
+|   |-- documents/            Document requirements
+|   |-- guide/                Application guidance
+|   |-- admin/                Admin dashboard
+|   +-- api/                  Server endpoints
+|
+|-- src/lib/
+|   |-- mongodb.ts            Database helpers
+|   |-- nodemailer.ts         Email service
+|   |-- auth.ts               Auth utilities
+|   +-- types/                Shared interfaces
+|
+|-- package.json
+|-- package-lock.json
+|-- next.config.ts
+|-- tsconfig.json
+|-- QUICK_START.md
+|-- IMPLEMENTATION.md
+`-- README.md
 ```
 
-An assessment in the app helps users understand requirements; final eligibility always depends on the official scheme authority.
-
-### 4. Preparing an application
-
-```text
-Eligibility result → Required documents → Checklist progress
-                   → Application timeline → Official next steps
-```
-
-The document and application-guide modules describe requirements and preparation steps. The supplied documentation does not establish automated government-form submission.
-
-### 5. Asking the AI assistant
-
-```text
-User question (English / Hindi / Marathi)
-        ↓
-Chat interface → /api/chat
-        ↓
-AI integration configured by the project
-        ↓
-Response rendered in the chat interface
-```
-
-The documentation describes chat archives and PDF conversation export. The precise prompt design, retrieval strategy, AI model, and grounding behavior require the missing application source files for confirmation.
-
-### Application architecture (documented / intended)
-
-```text
-Browser (React 19 + Next.js 16 UI)
-              │
-              ▼
-Next.js App Router (TypeScript)
-  ├── Pages: dashboard, chat, schemes, eligibility, documents, guide
-  ├── Authentication APIs ──► MongoDB (user records)
-  │                         └► Nodemailer (verification emails)
-  ├── Chat API ─────────────► AI integrations (LangChain / Google AI)
-  └── Scheme / information features
-              └────────────► Configured data sources / APIs
-```
-
-The repository dependencies include LangChain, Google generative-AI integrations, Supabase, and other packages. **Their presence alone does not establish which provider or data source is active in every execution path.** The source code is needed to verify the exact AI pipeline and external data integrations.
-
-## Technology stack
-
-| Area | Technologies |
-| --- | --- |
-| Frontend | Next.js **16.2.1**, React **19.2.4**, TypeScript |
-| Styling and motion | Tailwind CSS **4**, Framer Motion |
-| Backend | Next.js server-side routes / API handlers |
-| Database | MongoDB (documented for account persistence) |
-| Authentication and email | Custom email/password workflow, PBKDF2 password hashing, Nodemailer verification emails; Google OAuth described as *ready for configuration* |
-| AI-related dependencies | LangChain Core/Community, LangGraph, Google GenAI, Google Vertex AI |
-| Other installed packages | Supabase JS, NextAuth, Cheerio, Puppeteer, jsPDF, React Markdown |
-| Developer tooling | ESLint, npm, TypeScript |
-
-> This stack separates **documented application features** from **installed dependencies**. Not every listed package is necessarily used by an active feature.
-
-## Product design
-
-The interface uses a distinctive editorial aesthetic rather than a conventional dashboard template:
-
-- Deep burgundy and near-black accents on an off-white background.
-- Serif headlines, monospace labels, strong borders, and grid-based layouts.
-- Minimal motion, clear visual hierarchy, and mobile-responsive screens.
-- Accessible, guided steps for scheme discovery and document preparation.
-
-## Routes and modules
-
-The following routes are listed in the supplied project documentation:
+<details>
+<summary><strong>Expand the documented routes and API overview</strong></summary>
 
 | Route | Purpose |
-| --- | --- |
+|:--|:--|
 | `/` | Landing page |
 | `/auth/signup` | Registration |
 | `/auth/login` | Login |
 | `/dashboard` | User dashboard |
-| `/chat` | AI chat assistant |
+| `/chat` | AI assistant |
 | `/schemes` | Scheme discovery |
-| `/eligibility` | Eligibility assessment |
+| `/eligibility` | Eligibility checker |
 | `/documents` | Document guidance |
-| `/guide` | Application steps |
-| `/admin` | Admin dashboard |
+| `/guide` | Application guide |
+| `/admin` | Admin interface |
 
-Documented API routes include `POST /api/auth/register`, `POST /api/auth/login`, `GET/POST /api/auth/verify`, `POST /api/chat`, and `GET /api/news`. Confirm their availability against the current source tree before publishing this list as an API contract.
+| Method | Endpoint | Purpose |
+|:--|:--|:--|
+| `POST` | `/api/auth/register` | Register an account |
+| `POST` | `/api/auth/login` | Login |
+| `GET / POST` | `/api/auth/verify` | Verify email |
+| `POST` | `/api/chat` | AI chat |
+| `GET` | `/api/news` | News ticker |
 
-## Project structure (from implementation notes)
+Keep this documented API list aligned with current route handlers as the project evolves.
 
-```text
-lokseva-mitra/
-├── app/
-│   ├── page.tsx               # Landing page
-│   ├── auth/                  # Sign up and login
-│   ├── dashboard/             # Personal dashboard
-│   ├── chat/                  # AI assistant
-│   ├── schemes/               # Scheme browser
-│   ├── eligibility/           # Eligibility form and results
-│   ├── documents/             # Document checklist
-│   ├── guide/                 # Application instructions
-│   ├── admin/                 # Admin interface
-│   └── api/                   # Server-side endpoints
-├── src/lib/                   # Auth, MongoDB, email, types
-├── package.json               # Dependencies and scripts
-├── next.config.ts             # Next.js configuration
-└── README.md                  # Project documentation
-```
+</details>
 
-The tree is based on the supplied `IMPLEMENTATION.md` and `SUMMARY.md`; the `app/` and `src/lib/` files were not included among the attachments available for this review.
+---
 
-## Getting started
+## Getting Started
 
 ### Prerequisites
 
-- Git and Node.js/npm installed on your machine.
-- A MongoDB connection for database-dependent features.
-- Email credentials for the documented verification flow.
-- Provider/API credentials for any AI or external-data features you plan to use.
+- Git
+- Compatible Node.js LTS and npm
+- MongoDB connection details
+- Email credentials for verification
+- API credentials for whichever external AI/data integrations are enabled
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/ImmrAD/lokseva-mitra.git
@@ -244,72 +337,91 @@ cd lokseva-mitra
 ### 2. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
-### 3. Configure local environment
+### 3. Configure the environment
 
-Create a `.env.local` file in the project root. Based on the supplied setup guide, the following variables support the documented authentication/email setup:
+Create `.env.local` in the project root:
 
 ```dotenv
 MONGODB_URI=your_mongodb_connection_string
 NODEMAILER_SERVICE=gmail
-NODEMAILER_USER=your_email_address
+NODEMAILER_USER=your_email@example.com
 NODEMAILER_PASS=your_email_app_password
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 SALT_SECRET=replace_with_a_long_random_secret
 ```
 
-Depending on your actual chat and scheme-data integration, additional values may be needed (the implementation notes mention `SUPABASE_URL`, `GOOGLE_API_KEY`, and `OGD_API_KEY`). Check the source before deciding which are mandatory. **Never commit `.env.local`, credentials, or keys.**
+The accompanying implementation guide also mentions `GOOGLE_API_KEY`, `OGD_API_KEY`, and `SUPABASE_URL`. Configure them if the enabled features require those integrations.
 
-### 4. Start the application
+> [!IMPORTANT]
+> Never commit `.env.local`, database credentials, email passwords, cloud keys, or other secrets.
+
+### 4. Run locally
 
 ```bash
 npm run dev
 ```
 
-Open **http://localhost:3000**.
+Visit **http://localhost:3000**.
 
-Other available scripts:
+| Command | Purpose |
+|:--|:--|
+| `npm run dev` | Start development server |
+| `npm run lint` | Run ESLint |
+| `npm run build` | Build application |
+| `npm run start` | Serve a completed production build |
 
-```bash
-npm run lint
-npm run build
-npm run start
-```
+<details>
+<summary><strong>Expand the local demo checklist</strong></summary>
 
-`npm run start` serves a production build and should be run after `npm run build`.
+- [ ] Open the landing page.
+- [ ] Register and verify an account.
+- [ ] Log in and explore the dashboard.
+- [ ] Search and inspect schemes.
+- [ ] Walk through an eligibility assessment.
+- [ ] Review the document checklist and guide.
+- [ ] Try multilingual chat with the required services configured.
+- [ ] Check responsive behavior on a mobile screen.
 
-## Suggested demo walkthrough
-
-```text
-1. Open home page
-2. Register → verify email → sign in
-3. Browse schemes and select a relevant one
-4. Enter details in the eligibility checker
-5. Review the document checklist
-6. Follow the application guide
-7. Ask a question in English, Hindi, or Marathi chat
-8. Explore the admin view (with authorized access)
-```
-
-## Engineering considerations and next steps
-
-This project brings together user-facing experiences, backend routes, third-party integrations, and an information-guidance workflow. Before any production release, the team should verify and harden:
-
-- Server-side session management and authorization checks for protected/admin routes.
-- Authentication rate limiting, secure cookies, CSRF controls as applicable, and HTTPS.
-- Scheme source attribution, freshness, eligibility accuracy, and clear official-portal links.
-- AI response grounding, privacy controls, and safe handling of user-provided information.
-- Automated tests, error handling, accessibility, and deployment configuration.
-
-**Important:** The supplied notes explicitly flag session management, role-based access controls, rate limiting, and production security as follow-up work. This README does not claim those controls are complete.
-
-## Project links
-
-- **GitHub:** https://github.com/ImmrAD/lokseva-mitra
-- **Live demo** https://lokseva-mitra.vercel.app/
+</details>
 
 ---
 
-**Lokseva Mitra** — making the path from *finding a scheme* to *understanding how to apply* more navigable, multilingual, and user-friendly.
+## Engineering Considerations and Roadmap
+
+The product spans several meaningful engineering concerns: **account security**, **reliable public information**, **AI response quality**, **responsive UX**, and **multi-stage user guidance**.
+
+The implementation notes identify production-hardening work including protected admin authorization, session management, secure cookies, rate limiting, and HTTPS. The following are sensible next milestones:
+
+- [ ] Validate and clearly attribute all government scheme sources.
+- [ ] Add automated checks for authentication and eligibility workflows.
+- [ ] Harden access control, session security, and API protections.
+- [ ] Add last-updated information and official application links.
+- [ ] Improve multilingual accessibility and usability testing.
+- [ ] Include verified screenshots and a live demo link.
+
+---
+
+## Team and Contact
+
+**Repository owner:** [ImmrAD](https://github.com/ImmrAD)
+
+**Collaborator:** [Prathamesh Thakare](https://github.com/thakare18) · [LinkedIn](https://www.linkedin.com/in/prathameshv-thakare/)
+
+**Contact email (Prathamesh):** [prathameshthakre9677@gmail.com](mailto:prathameshthakre9677@gmail.com)
+
+**Project source:** [ImmrAD/lokseva-mitra](https://github.com/ImmrAD/lokseva-mitra)
+
+For technical discussion, collaboration, and career opportunities, connect through the linked profiles. Individual contributions can be reviewed in the repository history.
+
+---
+
+<div align="center">
+
+<h3>Lokseva Mitra</h3>
+
+<p><strong>Making public welfare information easier to discover, understand, and act on.</strong></p>
+
+</div>
