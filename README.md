@@ -45,59 +45,76 @@ The key design decision is to combine **structured workflows** with **conversati
 
 ```mermaid
 flowchart TB
-    U["Citizen / Administrator"] --> UI["Next.js 16 + React 19"]
-    UI --> DASH["Landing + Dashboard"]
+    USER["CITIZEN / ADMINISTRATOR"] --> WEB["NEXT.JS + REACT WEB APP"]
 
-    subgraph EXPERIENCE["Citizen experience"]
-        SCHEME["Scheme Discovery"]
-        ELIG["Eligibility Checker"]
-        DOC["Document Guidance"]
-        GUIDE["Application Guide"]
-        CHAT["Multilingual AI Chat"]
+    subgraph FRONTEND["01  |  FRONTEND EXPERIENCE"]
+      direction LR
+      ACCOUNT["Account & Dashboard"]
+      SCHEMES["Scheme & Eligibility"]
+      GUIDE["Documents & Application Guide"]
+      CHAT["Multilingual AI Chat"]
     end
 
-    DASH --> SCHEME
-    SCHEME --> ELIG
-    ELIG --> DOC
-    DOC --> GUIDE
-    DASH --> CHAT
+    WEB --> ACCOUNT
+    WEB --> SCHEMES
+    WEB --> GUIDE
+    WEB --> CHAT
 
-    subgraph SERVER["Application services"]
-        AUTH["Authentication APIs"]
-        CHATAPI["Chat API"]
-        INFO["Scheme / Guidance Logic"]
+    subgraph HANDLERS["02  |  NEXT.JS API HANDLERS"]
+      direction LR
+      AUTH["Register / Login / Verify"]
+      CHATAPI["Chat Endpoint"]
     end
 
-    UI --> AUTH
+    ACCOUNT --> AUTH
     CHAT --> CHATAPI
-    SCHEME --> INFO
-    AUTH --> DB["MongoDB"]
-    AUTH --> EMAIL["Nodemailer"]
-    CHATAPI --> AI["Configured AI Service"]
 
-    classDef dark fill:#103F79,stroke:#0B2C53,stroke-width:2px,color:#FFFFFF;
-    classDef blue fill:#1D65AD,stroke:#124B84,stroke-width:2px,color:#FFFFFF;
-    classDef light fill:#E7F2FF,stroke:#397EBE,stroke-width:2px,color:#123A63;
-    classDef external fill:#D5E9FC,stroke:#2A6AA7,stroke-width:2px,color:#123A63;
-    class U,UI,DASH dark;
-    class SCHEME,ELIG,DOC,GUIDE,CHAT blue;
-    class AUTH,CHATAPI,INFO light;
-    class DB,EMAIL,AI external;
-    style EXPERIENCE fill:#F1F7FF,stroke:#85B3E1,color:#123A63
-    style SERVER fill:#F1F7FF,stroke:#85B3E1,color:#123A63
+    subgraph SERVICES["03  |  DATA & EXTERNAL SERVICES"]
+      direction LR
+      DB["MongoDB"]
+      MAIL["Nodemailer"]
+      MODEL["Configured AI Provider"]
+    end
+
+    AUTH --> DB
+    AUTH --> MAIL
+    CHATAPI --> MODEL
+
+    classDef entry fill:#071A30,stroke:#3E88C8,stroke-width:3px,color:#FFFFFF;
+    classDef interface fill:#124F87,stroke:#69B2F1,stroke-width:2px,color:#FFFFFF;
+    classDef handler fill:#175F98,stroke:#7BC5F5,stroke-width:2px,color:#FFFFFF;
+    classDef integration fill:#123B63,stroke:#5DA6D8,stroke-width:2px,color:#FFFFFF;
+    class USER,WEB entry;
+    class ACCOUNT,SCHEMES,GUIDE,CHAT interface;
+    class AUTH,CHATAPI handler;
+    class DB,MAIL,MODEL integration;
+    style FRONTEND fill:#0A2542,stroke:#3B83BF,stroke-width:2px,color:#FFFFFF
+    style HANDLERS fill:#0A2542,stroke:#3B83BF,stroke-width:2px,color:#FFFFFF
+    style SERVICES fill:#0A2542,stroke:#3B83BF,stroke-width:2px,color:#FFFFFF
+    linkStyle default stroke:#3179B7,stroke-width:2px
 ```
 
-The architecture shows the main documented modules and integration boundaries. The actual AI provider and third-party scheme data sources depend on project configuration.
+**How to read this diagram:**
 
-### Layer-wise responsibilities
+1. **Frontend experience:** Users interact with account pages, the scheme and eligibility modules, document/application guidance, and AI chat.
+2. **Application layer:** Next.js handles the documented authentication and chat API endpoints.
+3. **Connected services:** Authentication uses MongoDB and Nodemailer; chat connects to the AI provider configured for the project.
 
-| Layer | Core responsibility | Main technologies |
+Scheme discovery, eligibility, documents, and application guidance are shown as **application modules**, not as separate external APIs. Their exact data sources and server-side behavior depend on the current implementation.
+
+### Component responsibility map
+
+| Component | Role in the system | Documented route / integration |
 |:--|:--|:--|
-| **Presentation** | Pages, forms, chat interface, responsive layouts | Next.js, React, Tailwind CSS, Framer Motion |
-| **Application** | Server APIs and module logic | Next.js App Router, TypeScript |
-| **Authentication** | Account creation, sign-in, verification | Authentication utilities, Nodemailer |
-| **Persistence** | Account data and database connectivity | MongoDB |
-| **AI and content** | Assistant interaction and supporting tools | LangChain ecosystem, Google AI packages, React Markdown, jsPDF |
+| **Account & Dashboard** | Registration, login, and a central entry point for users. | `/auth/signup`, `/auth/login`, `/dashboard` |
+| **Scheme Discovery** | Browse and filter schemes and open scheme details. | `/schemes` |
+| **Eligibility Checker** | Collect relevant details and present criteria-based guidance. | `/eligibility` |
+| **Document Guidance** | Show required documents and preparation progress. | `/documents` |
+| **Application Guide** | Explain steps, timelines, and frequently asked questions. | `/guide` |
+| **Multilingual AI Chat** | Provide a conversational assistance interface. | `/chat`, `/api/chat` |
+| **Admin Dashboard** | Display scheme, user, and application management views. | `/admin` |
+| **Authentication API** | Process registration, login, and email verification. | `/api/auth/*` |
+| **Database & Email** | Store user records and send verification emails. | MongoDB, Nodemailer |
 
 ---
 
@@ -106,24 +123,32 @@ The architecture shows the main documented modules and integration boundaries. T
 ### From first visit to application readiness
 
 ```mermaid
-flowchart TD
-    START["Visit Lokseva Mitra"] --> ACCOUNT["Sign Up / Log In"]
-    ACCOUNT --> VERIFY["Email Verification"]
-    VERIFY --> HOME["User Dashboard"]
-    HOME --> SEARCH["Find Relevant Schemes"]
-    SEARCH --> CHECK["Understand Eligibility"]
-    CHECK --> DOCUMENTS["Prepare Documents"]
-    DOCUMENTS --> APPLY["Follow Application Guide"]
-    HOME --> ASSIST["Ask AI Assistant"]
-    ASSIST -. "Clarify questions" .-> SEARCH
+flowchart TB
+    START["OPEN LOKSEVA MITRA"]
+    START --> NEW["NEW USER: SIGN UP"]
+    START --> RETURN["EXISTING USER"]
+    NEW --> VERIFY["VERIFY EMAIL"]
+    VERIFY --> ACCESS["LOG IN"]
+    RETURN --> ACCESS
+    ACCESS --> DASH["USER DASHBOARD"]
+    DASH --> DISCOVER["1. DISCOVER SCHEMES"]
+    DISCOVER --> ELIGIBLE["2. CHECK ELIGIBILITY"]
+    ELIGIBLE --> DOCUMENTS["3. PREPARE DOCUMENTS"]
+    DOCUMENTS --> STEPS["4. FOLLOW APPLICATION GUIDE"]
+    DASH --> ASSIST["OPTIONAL: ASK AI ASSISTANT"]
 
-    classDef strong fill:#0E4B89,stroke:#0C335F,stroke-width:2px,color:#FFFFFF;
-    classDef step fill:#DFEFFF,stroke:#3A7EBB,stroke-width:2px,color:#113B64;
-    classDef help fill:#2578BF,stroke:#124A82,stroke-width:2px,color:#FFFFFF;
-    class START,HOME strong;
-    class ACCOUNT,VERIFY,SEARCH,CHECK,DOCUMENTS,APPLY step;
-    class ASSIST help;
+    classDef entry fill:#071A30,stroke:#438CC9,stroke-width:3px,color:#FFFFFF;
+    classDef account fill:#124F87,stroke:#66B7F1,stroke-width:2px,color:#FFFFFF;
+    classDef journey fill:#17659E,stroke:#79C1F0,stroke-width:2px,color:#FFFFFF;
+    classDef optional fill:#164C77,stroke:#4C9ACF,stroke-width:2px,color:#FFFFFF;
+    class START,DASH entry;
+    class NEW,RETURN,VERIFY,ACCESS account;
+    class DISCOVER,ELIGIBLE,DOCUMENTS,STEPS journey;
+    class ASSIST optional;
+    linkStyle default stroke:#3179B7,stroke-width:2px
 ```
+
+**Two paths, one dashboard:** New users register and verify their email; existing users can log in directly. From the dashboard, citizens can follow the discovery-to-guidance sequence or open the AI assistant independently. The application guide supports the next steps; it does not submit government applications automatically.
 
 ### Workflow 01 — Registration and verification
 
@@ -175,16 +200,16 @@ This is an informational support workflow; official authorities make final eligi
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant UI as Chat Interface
-    participant API as Next.js Chat API
+    participant U as User
+    participant F as Chat Interface
+    participant B as Next.js Chat API
     participant AI as Configured AI Service
-    User->>UI: Ask in English / Hindi / Marathi
-    UI->>API: Submit message
-    API->>AI: Process question
-    AI-->>API: Return answer
-    API-->>UI: Respond to chat
-    UI-->>User: Display assistant reply
+    U->>F: Ask in English / Hindi / Marathi
+    F->>B: Submit message
+    B->>AI: Process question
+    AI-->>B: Return answer
+    B-->>F: Respond to chat
+    F-->>U: Display assistant reply
 ```
 
 The documented chat module also describes conversation history and PDF export. The diagram presents the high-level interaction without assuming an undocumented retrieval technique.
@@ -410,11 +435,11 @@ The implementation notes identify production-hardening work including protected 
 
 **Collaborator:** [Prathamesh Thakare](https://github.com/thakare18) · [LinkedIn](https://www.linkedin.com/in/prathameshv-thakare/)
 
-**Contact email (Prathamesh):** [prathameshthakre9677@gmail.com](mailto:prathameshthakre9677@gmail.com)
+**Contact email (Prathamesh):** [prathameshthakare9677@gmail.com](mailto:prathameshthakare9677@gmail.com)
 
 **Project source:** [ImmrAD/lokseva-mitra](https://github.com/ImmrAD/lokseva-mitra)
 
-For technical discussion, collaboration, and career opportunities, connect through the linked profiles. Individual contributions can be reviewed in the repository history.
+For technical discussions, collaboration, and career opportunities, connect through the linked profiles.
 
 ---
 
