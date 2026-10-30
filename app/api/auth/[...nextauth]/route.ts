@@ -1,7 +1,6 @@
 import NextAuth, { type NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { type User as NextAuthUser } from 'next-auth';
-import { getUserByEmail, createUser } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,6 +12,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
       try {
+        const { getUserByEmail, createUser } = await import('@/lib/auth');
         // Check if user exists
         const existingUser = await getUserByEmail(user.email!);
 

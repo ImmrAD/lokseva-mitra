@@ -61,7 +61,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="bg-white border-b-4 border-double border-zinc-900 sticky top-0 z-50">
         <nav className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex justify-between items-center">
-          <div className="text-center flex-1">
+          <div className="text-center flex-1 relative left-1/2 -translate-x-1/2">
             <h1 className="text-2xl md:text-3xl font-serif font-black text-rose-950">
               लोकसेवा मित्र
             </h1>
